@@ -272,9 +272,11 @@ for (const heading of headings) {
         border-color: color-mix(in srgb, var(--navy) 22%, var(--line));
       }
 
+      /* Focus is the border colour alone: no outer ring. */
+      .search-box input:focus,
       .search-box input:focus-visible {
         border-color: var(--action);
-        outline-offset: 1px;
+        outline: none;
       }
 
       /* Search sits at the far right of the masthead and is hidden until there
