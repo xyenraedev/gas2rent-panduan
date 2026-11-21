@@ -1,0 +1,19 @@
+{
+  "name": "gas2rent-panduan",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.19.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && node scripts/check-anchors.mjs",
+    "preview": "astro preview",
+    "check": "node scripts/check-anchors.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.4.13"
+  },
+  "devDependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0"
+  }
+}

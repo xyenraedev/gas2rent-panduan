@@ -1,0 +1,865 @@
+---
+import "@fontsource-variable/plus-jakarta-sans";
+import Panduan, { getHeadings } from "../content/panduan.md";
+
+/**
+ * One page. The table of contents is built from the headings in the Markdown,
+ * so a renamed section cannot point at an anchor that no longer exists.
+ *
+ * Group boundaries are explicit because 28 items with no grouping is a wall.
+ * Each entry names the slug its group starts at; headings keep Markdown order.
+ */
+const GROUPS = [
+  { title: "Memulai", start: "masuk" },
+  { title: "Harga dan armada", start: "harga-dan-dp" },
+  { title: "Halaman situs", start: "beranda" },
+  { title: "Referensi", start: "batas-daftar" },
+];
+
+const headings = (await getHeadings()).filter((h) => h.depth === 2);
+
+const groups = GROUPS.map((group) => ({ title: group.title, items: [] as typeof headings }));
+let current = groups[0];
+
+for (const heading of headings) {
+  const next = GROUPS.find((group) => group.start === heading.slug);
+  if (next) current = groups.find((group) => group.title === next.title)!;
+  current.items.push(heading);
+}
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Panduan admin gas2rent</title>
+    <meta
+      name="description"
+      content="Panduan memakai panel admin gas2rent: nama rental, harga, armada, syarat sewa, dan halaman situs."
+    />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0b2a5b" />
+    <link rel="icon" href="/icon.png" type="image/png" />
+    <style is:global>
+      :root {
+        --sans:
+          "Plus Jakarta Sans Variable", "Plus Jakarta Sans", system-ui,
+          -apple-system, "Segoe UI", sans-serif;
+        --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+        --paper: #f6f8fc;
+        --card: #ffffff;
+        --line: #dce4f0;
+
+        --navy: #0b2a5b;
+        --navy-soft: #16407f;
+        --action: #2563eb;
+        --action-soft: #eaf1fb;
+
+        --ink-900: #0e1a2e;
+        --ink-700: #2f3f57;
+        --ink-500: #56657b;
+
+        --radius: 8px;
+
+        /* Spacing scale: the whole page uses these four steps and nothing
+           else, so rhythm comes from the scale instead of per-block guesses. */
+        --s-1: 1.25rem; /* 20px — heading to its paragraph */
+        --s-2: 3.125rem; /* 50px — between blocks */
+        --s-3: 3.75rem; /* 60px — between sections */
+        --s-4: 2.5rem; /* 40px — page margin */
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-padding-top: 5.5rem;
+        scrollbar-gutter: stable;
+      }
+
+      /* Jumping between sections glides, but only for readers who have not
+         asked the system to reduce motion. */
+      @media (prefers-reduced-motion: no-preference) {
+        html {
+          scroll-behavior: smooth;
+        }
+      }
+
+      /* The page has exactly one scrollbar: the document's. Same look as the
+         panel — thin, brand navy at 38% on a transparent track. The standard
+         property is the long-term path; the WebKit rules are the fallback and
+         are gated so the two never fight. */
+      @supports (scrollbar-color: auto) {
+        * {
+          scrollbar-width: thin;
+        }
+
+        html {
+          scrollbar-color: color-mix(in oklab, var(--navy) 38%, transparent)
+            transparent;
+        }
+      }
+
+      @supports not (scrollbar-color: auto) {
+        ::-webkit-scrollbar {
+          width: 10px;
+          height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background-color: color-mix(
+            in oklab,
+            var(--navy) 38%,
+            transparent
+          );
+          border: 2px solid transparent;
+          border-radius: 999px;
+          background-clip: padding-box;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background-color: color-mix(in oklab, var(--navy) 60%, transparent);
+        }
+
+        ::-webkit-scrollbar-corner {
+          background: transparent;
+        }
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink-900);
+        font-family: var(--sans);
+        font-size: 1.0625rem;
+        line-height: 1.72;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      ::selection {
+        background: #cfe0fd;
+      }
+
+      a {
+        color: var(--navy-soft);
+        text-decoration-color: color-mix(in srgb, var(--navy-soft) 35%, transparent);
+        text-underline-offset: 0.18em;
+      }
+
+      a:hover {
+        color: var(--action);
+        text-decoration-color: currentColor;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--action);
+        outline-offset: 2px;
+        border-radius: 3px;
+      }
+
+      .skip {
+        position: absolute;
+        left: 1rem;
+        top: -4rem;
+        z-index: 30;
+        padding: 0.6rem 1rem;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .skip:focus {
+        top: 1rem;
+      }
+
+      /* ---------------------------------------------------------- masthead */
+
+      .masthead {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: var(--paper);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .masthead-inner {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0.6rem var(--s-4);
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        min-width: 0;
+        text-decoration: none;
+      }
+
+      .brand img {
+        display: block;
+        width: auto;
+        height: 1.9rem;
+      }
+
+      .brand-label {
+        color: var(--ink-500);
+        font-size: 0.9rem;
+        white-space: nowrap;
+      }
+
+      .brand-sep {
+        width: 1px;
+        height: 1.1rem;
+        background: var(--line);
+      }
+
+      /* ------------------------------------------------------------ search */
+
+      /* One field, two places: the masthead on wide screens and the contents
+         panel on phones. Both carry .search-box, so the look lives here once
+         and neither can drift from the other. */
+      .search-box {
+        position: relative;
+      }
+
+      .search-box input {
+        width: 100%;
+        height: 2.25rem;
+        padding: 0 0.85rem 0 2.15rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background-color: var(--card);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2356657b' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='4.6'/%3E%3Cpath d='M10.4 10.4 13.6 13.6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: 0.8rem center;
+        background-size: 0.85rem 0.85rem;
+        color: var(--ink-900);
+        font: inherit;
+        font-size: 0.85rem;
+        transition:
+          border-color 120ms ease,
+          background-color 120ms ease;
+      }
+
+      .search-box input::placeholder {
+        color: var(--ink-500);
+      }
+
+      .search-box input:hover {
+        border-color: color-mix(in srgb, var(--navy) 22%, var(--line));
+      }
+
+      .search-box input:focus-visible {
+        border-color: var(--action);
+        outline-offset: 1px;
+      }
+
+      /* Search sits at the far right of the masthead and is hidden until there
+         is room for it; the panel carries its own copy below. */
+      .search {
+        display: none;
+        margin-left: auto;
+      }
+
+      @media (min-width: 46rem) {
+        .search {
+          display: block;
+          width: 14rem;
+        }
+      }
+
+      /* ------------------------------------------------- contents on phone */
+
+      .toc-panel {
+        display: block;
+        margin-left: auto;
+        position: relative;
+      }
+
+      @media (min-width: 62rem) {
+        .toc-panel {
+          display: none;
+        }
+      }
+
+      .toc-panel > summary {
+        list-style: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--card);
+        color: var(--navy);
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .toc-panel > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .toc-panel > summary::after {
+        content: "";
+        width: 0.45rem;
+        height: 0.45rem;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: rotate(45deg) translateY(-1px);
+      }
+
+      .toc-panel[open] > summary::after {
+        transform: rotate(225deg) translateY(-1px);
+      }
+
+      .toc-mobile {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 0.5rem);
+        width: min(20rem, calc(100vw - 2.5rem));
+        max-height: min(70vh, 32rem);
+        overflow: auto;
+        padding: 0.9rem;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+
+      .toc-mobile .search-box {
+        margin-bottom: 0.75rem;
+      }
+
+      /* ------------------------------------------------------------- page */
+
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 var(--s-4) var(--s-3);
+      }
+
+      .rail {
+        display: none;
+      }
+
+      @media (min-width: 62rem) {
+        .page {
+          display: grid;
+          /* The article takes every pixel left after the rail and the gap, so
+             its right edge lines up with the masthead's search field instead
+             of leaving a column of empty paper. */
+          grid-template-columns: 15rem minmax(0, 1fr);
+          gap: var(--s-2);
+          align-items: start;
+        }
+
+        /* Sticky, never its own scroller: that is what keeps the page to one
+           scrollbar. The list is short enough to fit beside the article. */
+        .rail {
+          display: block;
+          position: sticky;
+          top: 4.25rem;
+          padding: var(--s-2) 0.5rem var(--s-2) 0;
+        }
+      }
+
+      /* ---------------------------------------------------------- contents */
+
+      .toc {
+        font-size: 0.875rem;
+        line-height: 1.45;
+      }
+
+      .toc-group + .toc-group {
+        margin-top: var(--s-1);
+      }
+
+      .toc-title {
+        margin: 0 0 0.4rem;
+        padding: 0 0 0.35rem 0.55rem;
+        color: var(--ink-500);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .toc ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .toc li a {
+        display: block;
+        padding: 0.36rem 0.55rem;
+        border-radius: var(--radius);
+        color: var(--ink-700);
+        text-decoration: none;
+      }
+
+      .toc li a:hover {
+        background: var(--card);
+        color: var(--navy);
+      }
+
+      /* The active section is a filled pill. */
+      .toc li a[aria-current="true"] {
+        background: var(--action);
+        color: #ffffff;
+        font-weight: 600;
+      }
+
+      .toc li a[aria-current="true"]:hover {
+        background: #1d4ed8;
+        color: #ffffff;
+      }
+
+      .toc li[hidden] {
+        display: none;
+      }
+
+      .toc-empty {
+        margin: 0.6rem 0 0;
+        padding-left: 0.55rem;
+        color: var(--ink-500);
+        font-size: 0.8rem;
+      }
+
+      /* ------------------------------------------------------------ prose */
+
+      .doc-wrap {
+        min-width: 0;
+        padding-top: var(--s-2);
+      }
+
+      .doc > :first-child {
+        margin-top: 0;
+      }
+
+      .doc h1 {
+        margin: 0 0 var(--s-1);
+        font-size: clamp(1.9rem, 1.4rem + 1.8vw, 2.4rem);
+        font-weight: 800;
+        line-height: 1.14;
+        letter-spacing: -0.028em;
+        color: var(--navy);
+      }
+
+      .doc h1 + p {
+        margin-top: 0;
+        color: var(--ink-700);
+        font-size: 1.08rem;
+      }
+
+      .doc h2 {
+        margin: var(--s-3) 0 var(--s-1);
+        padding-top: var(--s-1);
+        border-top: 1px solid var(--line);
+        font-size: 1.28rem;
+        font-weight: 750;
+        line-height: 1.3;
+        letter-spacing: -0.015em;
+        color: var(--ink-900);
+      }
+
+      .doc h2 + p,
+      .doc h2 + ul,
+      .doc h2 + ol {
+        margin-top: 0;
+      }
+
+      .doc h3 {
+        margin: var(--s-2) 0 0.6rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--navy);
+      }
+
+      .doc p {
+        margin: 0 0 var(--s-1);
+      }
+
+      .doc ul,
+      .doc ol {
+        margin: 0 0 var(--s-2);
+        padding-left: 1.3rem;
+      }
+
+      .doc li + li {
+        margin-top: 0.4rem;
+      }
+
+      .doc strong {
+        font-weight: 700;
+      }
+
+      .doc code {
+        padding: 0.1em 0.34em;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: var(--card);
+        color: var(--navy);
+        font-family: var(--mono);
+        font-size: 0.86em;
+      }
+
+      .doc blockquote {
+        margin: var(--s-2) 0;
+        padding: 0.75rem 0 0.75rem 1.1rem;
+        border-left: 3px solid var(--action);
+        background: color-mix(in srgb, var(--action-soft) 55%, var(--card));
+        color: var(--ink-700);
+      }
+
+      .doc blockquote p {
+        margin: 0;
+      }
+
+      /* ----------------------------------------------------------- tables */
+
+      .doc table {
+        width: 100%;
+        min-width: 17rem;
+        margin: var(--s-2) 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--card);
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      .doc thead th {
+        padding: 0.7rem 1rem;
+        background: color-mix(in srgb, var(--action-soft) 55%, var(--card));
+        color: var(--ink-700);
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .doc tbody td {
+        padding: 0.6rem 1rem;
+        border-top: 1px solid var(--line);
+        vertical-align: baseline;
+      }
+
+      .doc th:last-child,
+      .doc td:last-child {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      /* ----------------------------------------------------------- footer */
+
+      .doc-foot {
+        margin-top: var(--s-3);
+        padding-top: var(--s-1);
+        border-top: 1px solid var(--line);
+        color: var(--ink-500);
+        font-size: 0.86rem;
+      }
+
+      .doc-foot p {
+        margin: 0;
+      }
+
+      @media (max-width: 46rem) {
+        :root {
+          --s-1: 1rem;
+          --s-2: 2rem;
+          --s-3: 2.5rem;
+          --s-4: 1.1rem;
+        }
+
+        body {
+          font-size: 1rem;
+          line-height: 1.7;
+        }
+
+        .brand img {
+          height: 1.6rem;
+        }
+
+        .brand-sep,
+        .brand-label {
+          display: none;
+        }
+
+        .doc h1 {
+          font-size: 1.7rem;
+        }
+
+        .doc h2 {
+          font-size: 1.16rem;
+        }
+      }
+
+      @media print {
+        .masthead,
+        .rail,
+        .skip,
+        .doc-foot,
+        .search {
+          display: none;
+        }
+
+        .page {
+          display: block;
+          max-width: none;
+          padding: 0;
+        }
+
+        .doc h2 {
+          break-after: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#isi">Langsung ke isi</a>
+
+    <header class="masthead">
+      <div class="masthead-inner">
+        <a class="brand" href="/">
+          <img
+            src="/logo.png"
+            alt="gas2rent"
+            width="462"
+            height="315"
+            decoding="async"
+          />
+          <span class="brand-sep" aria-hidden="true"></span>
+          <span class="brand-label">Panduan admin</span>
+        </a>
+
+        <form class="search search-box" role="search" data-search-form>
+          <input
+            type="search"
+            name="q"
+            placeholder="Cari bagian"
+            aria-label="Cari bagian panduan"
+            autocomplete="off"
+            data-search
+          />
+        </form>
+
+        <details class="toc-panel" data-toc-panel>
+          <summary>Daftar isi</summary>
+          <nav class="toc toc-mobile" aria-label="Daftar isi panel">
+            <form class="search-box" role="search" data-search-form>
+              <input
+                type="search"
+                name="q"
+                placeholder="Cari bagian"
+                aria-label="Cari bagian panduan"
+                autocomplete="off"
+                data-search
+              />
+            </form>
+            {
+              groups.map((group) => (
+                <div class="toc-group">
+                  <p class="toc-title">{group.title}</p>
+                  <ul>
+                    {group.items.map((heading) => (
+                      <li>
+                        <a href={`#${heading.slug}`}>{heading.text}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            }
+            <p class="toc-empty" data-toc-empty hidden>
+              Tidak ada bagian yang cocok.
+            </p>
+          </nav>
+        </details>
+      </div>
+    </header>
+
+    <div class="page">
+      <aside class="rail">
+        <nav class="toc" aria-label="Daftar isi" data-toc>
+          {
+            groups.map((group) => (
+              <div class="toc-group">
+                <p class="toc-title">{group.title}</p>
+                <ul>
+                  {group.items.map((heading) => (
+                    <li>
+                      <a href={`#${heading.slug}`}>{heading.text}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
+          <p class="toc-empty" data-toc-empty hidden>
+            Tidak ada bagian yang cocok.
+          </p>
+        </nav>
+      </aside>
+
+      <main id="isi" tabindex="-1" class="doc-wrap">
+        <article class="doc">
+          <Panduan />
+        </article>
+        <footer class="doc-foot">
+          <p>
+            Panduan ini ikut berubah saat panel diperbarui. Kalau ada yang tidak
+            sesuai dengan layar Anda, hubungi penyedia situs.
+          </p>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      // Two jobs: mark the section being read, and filter the contents list as
+      // you type. Nothing here is needed to read the page — the links work
+      // without it.
+      const panel =
+        document.querySelector<HTMLDetailsElement>("[data-toc-panel]");
+      const links = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>(".toc a[href^='#']"),
+      );
+
+      if (links.length) {
+        const heads = Array.from(
+          document.querySelectorAll<HTMLElement>(".doc h2[id]"),
+        );
+        let shown: string | null = null;
+
+        const paint = () => {
+          let current: string | null = null;
+
+          for (const head of heads) {
+            if (head.getBoundingClientRect().top <= 120) current = head.id;
+            else break;
+          }
+
+          if (current === shown) return;
+          shown = current;
+
+          for (const a of links) a.removeAttribute("aria-current");
+          if (!current) return;
+
+          for (const a of links) {
+            if (a.getAttribute("href") === `#${current}`) {
+              a.setAttribute("aria-current", "true");
+            }
+          }
+        };
+
+        let queued = false;
+
+        addEventListener(
+          "scroll",
+          () => {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(() => {
+              queued = false;
+              paint();
+            });
+          },
+          { passive: true },
+        );
+
+        paint();
+      }
+
+      // Search filters the groups; a group with no visible entry is hidden too,
+      // so the list shortens instead of showing empty headings.
+      const inputs = Array.from(
+        document.querySelectorAll<HTMLInputElement>("[data-search]"),
+      );
+
+      const filter = (query: string) => {
+        const needle = query.trim().toLowerCase();
+
+        for (const input of inputs) {
+          if (input.value !== query) input.value = query;
+        }
+
+        for (const group of document.querySelectorAll<HTMLElement>(".toc-group")) {
+          let visible = 0;
+
+          for (const item of group.querySelectorAll<HTMLElement>("li")) {
+            const hit = !needle || (item.textContent ?? "").toLowerCase().includes(needle);
+            item.hidden = !hit;
+            if (hit) visible += 1;
+          }
+
+          group.hidden = visible === 0;
+        }
+
+        for (const empty of document.querySelectorAll<HTMLElement>("[data-toc-empty]")) {
+          empty.hidden = needle === "" || Boolean(document.querySelector(".toc li:not([hidden])"));
+        }
+      };
+
+      for (const input of inputs) {
+        input.addEventListener("input", () => filter(input.value));
+
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            filter("");
+            input.blur();
+            panel?.removeAttribute("open");
+            return;
+          }
+
+          if (event.key !== "Enter") return;
+
+          const first = document.querySelector<HTMLAnchorElement>(
+            ".rail .toc li:not([hidden]) a, .toc-mobile .toc li:not([hidden]) a",
+          );
+
+          if (!first) return;
+          event.preventDefault();
+          first.click();
+          panel?.removeAttribute("open");
+        });
+      }
+
+      panel?.addEventListener("click", (event) => {
+        if ((event.target as Element).closest("a")) {
+          panel.removeAttribute("open");
+        }
+      });
+
+      // A tap anywhere off the panel closes it. Everything inside keeps it
+      // open, so typing in its own search field does not shut the list.
+      document.addEventListener("pointerdown", (event) => {
+        if (!panel?.open) return;
+        if (panel.contains(event.target as Node)) return;
+        panel.removeAttribute("open");
+      });
+    </script>
+  </body>
+</html>
